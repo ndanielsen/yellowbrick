@@ -316,17 +316,16 @@ class DecisionBoundariesVisualizer(ClassificationScoreVisualizer):
 
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, x_max]x[y_min, y_max].
-        x_min, x_max = X[:, 0].min() - (X[:, 0].min() * .01), X[:, 0].max() + (X[:, 0].max() * .01)
-        y_min, y_max = X[:, 1].min() - (X[:, 1].min() * .01), X[:, 1].max() + (X[:, 1].max() * .01)
+        self.x_min, self.x_max = X[:, 0].min() - (X[:, 0].min() * .01), X[:, 0].max() + (X[:, 0].max() * .01)
+        self.y_min, self.y_max = X[:, 1].min() - (X[:, 1].min() * .01), X[:, 1].max() + (X[:, 1].max() * .01)
 
-        self.ax.set_xlim([x_min, x_max])
-        self.ax.set_ylim([y_min, y_max])
+
         # set the step increment for drawing the boundary graph
-        x_step = (x_max - x_min) * self.step_size
-        y_step = (y_max - y_min) * self.step_size
+        x_step = (self.x_max - self.x_min) * self.step_size
+        y_step = (self.y_max - self.y_min) * self.step_size
 
         self.xx, self.yy = np.meshgrid(
-            np.arange(x_min, x_max, x_step), np.arange(y_min, y_max, y_step))
+            np.arange(self.x_min, self.x_max, x_step), np.arange(self.y_min, self.y_max, y_step))
 
         # raise Exception(self.yy.ravel().shape)
         Z = self.estimator.predict(np.c_[self.xx.ravel(), self.yy.ravel()])
@@ -343,6 +342,9 @@ class DecisionBoundariesVisualizer(ClassificationScoreVisualizer):
         # ensure that if someone is passing in another X such as X_test, that
         # features will be properly handled
         X = self._select_feature_columns(X)
+
+        self.ax.set_xlim([self.x_min, self.x_max])
+        self.ax.set_ylim([self.y_min, self.y_max])
 
         color_cycle = iter(
             resolve_colors(colors=self.colors, n_colors=len(self.classes_)))
