@@ -24,34 +24,23 @@ from sklearn.base import BaseEstimator
 
 class StatsModelsWrapper(BaseEstimator):
     """
-    Wrap a statsmodels GLM as a sklearn (fake) BaseEstimator for YellowBrick.
+    The StatsModelsWrapper wraps a statsmodels GLM as a scikit-learn (fake) BaseEstimator for YellowBrick.
+  
 
-    Examples
-    --------
-    First import the external libraries and helper utilities:
+    Parameters
+    ----------
+    glm_partial : a partial function
+        A partial function that contains the statsmodel model and model family
+        >>> partial(sm.GLM, family=sm.families.Gaussian())
 
-    >>> import statsmodels.api as sm
-    >>> from functools import partial
+    stated_estimator_type : string, default: regressor
+        The feature name that corresponds to a column name or index postion
+        in the matrix that will be plotted against the x-axis
 
-    Instantiate a partial with the statsmodels API:
+    scorer : object, scikit-learn scoring metric, default: r2_score
+        A scikit-learn scoring function
 
-    >>> glm_gaussian_partial = partial(sm.GLM, family=sm.families.Gaussian())
-    >>> sm_est = StatsModelsWrapper(glm_gaussian_partial)
 
-    Create a Yellowbrick visualizer to visualize prediction error:
-
-    >>> visualizer = PredictionError(sm_est)
-    >>> visualizer.fit(X_train, y_train)
-    >>> visualizer.score(X_test, y_test)
-
-    For statsmodels usage, calling .summary() etc:
-
-    >>> gaussian_model = glm_gaussian_partial(y_train, X_train)
-
-    Note
-    ----
-    .. note:: This wrapper is trivial, options and extra things like weights
-        are not currently handled.
     """
     def __init__(self, glm_partial, stated_estimator_type="regressor",
                  scorer=r2_score):
@@ -69,6 +58,12 @@ class StatsModelsWrapper(BaseEstimator):
     def fit(self, X, y):
         """
         Pretend to be a sklearn estimator, fit is called on creation
+
+        X : ndarray or DataFrame of shape n x m
+            A matrix of n instances with m features
+
+        y : ndarray or Series of length n
+            An array or series of target or class values
         """
 
         # note that GLM takes endog (y) and then exog (X):
@@ -78,7 +73,32 @@ class StatsModelsWrapper(BaseEstimator):
         return self
 
     def predict(self, X):
+        """
+        Predicting the labels of X.
+
+        X : ndarray or DataFrame of shape n x m
+            A matrix of n instances with m features
+
+        y : ndarray or Series of length n
+            An array or series of target or class values
+        """
+
         return self.glm_results.predict(X)
 
     def score(self, X, y):
+        """
+        Scoring the the quality of predictions against a score function.
+        
+        X : ndarray or DataFrame of shape n x m
+            A matrix of n instances with m features
+
+        y : ndarray or Series of length n
+            An array or series of target or class values
+
+        """
         return self.scorer(y, self.predict(X))
+
+
+# TODOs
+
+# 1- Add quick method
