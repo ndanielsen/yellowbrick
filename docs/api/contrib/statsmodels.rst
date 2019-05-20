@@ -14,7 +14,6 @@ The StatsModelsWrapper wraps a statsmodels GLM and gives it a facade interface (
 
     from functools import partial
 
-    import numpy as np
     import statsmodels.api as sm
     from sklearn.model_selection import train_test_split
 

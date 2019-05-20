@@ -31,13 +31,12 @@ class StatsModelsWrapper(BaseEstimator):
     ----------
     glm_partial : a partial function
         A partial function that contains the statsmodel model and model family
-        >>> partial(sm.GLM, family=sm.families.Gaussian())
 
     stated_estimator_type : string, default: regressor
         The feature name that corresponds to a column name or index postion
         in the matrix that will be plotted against the x-axis
 
-    scorer : object, scikit-learn scoring metric, default: r2_score
+    scorer : object, scikit-learn scoring metric, default: sklearn.metrics.r2_score
         A scikit-learn scoring function
 
 
@@ -74,7 +73,7 @@ class StatsModelsWrapper(BaseEstimator):
 
     def predict(self, X):
         """
-        Predicting the labels of X.
+        Predict the labels of X
 
         X : ndarray or DataFrame of shape n x m
             A matrix of n instances with m features
@@ -99,6 +98,34 @@ class StatsModelsWrapper(BaseEstimator):
         return self.scorer(y, self.predict(X))
 
 
-# TODOs
+def decisionviz(model,
+                X,
+                y,
+                family=None,
+                colors=None,
+                classes=None,
+                features=None,
+                show_scatter=True,
+                step_size=0.0025,
+                markers=None,
+                pcolormesh_alpha=0.8,
+                scatter_alpha=1.0,
+                title=None,
+                **kwargs):
+    """
 
-# 1- Add quick method
+
+    """
+    statsmodels_partial = partial(model, family=sm.families.Gaussian())
+    statsmodel_estimator = StatsModelsWrapper(statsmodels_partial)
+
+    viz = PredictionError(sm_est, title="General Linear Model")
+    viz.fit(X_train, y_train)
+    viz.score(X_test, y_test)
+
+    # Fit, draw and poof the visualizer
+    viz.fit_draw_poof(X, y, **kwargs)
+
+    # Return the axes object on the visualizer
+    return viz.ax
+
