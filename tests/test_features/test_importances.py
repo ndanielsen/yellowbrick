@@ -19,7 +19,6 @@ Test the feature importance visualizers
 ## Imports
 ##########################################################################
 
-import sys
 import pytest
 import numpy as np
 import numpy.testing as npt
