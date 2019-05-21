@@ -56,7 +56,7 @@ install:
     - "python -m pip install -U -r requirements.txt"
     - "python -m pip install -U -r tests/requirements.txt"
     - "python -m nltk.downloader popular"
-    - "python -c 'import matplotlib; print(matplotlib.matplotlib_fname())'" 
+    - "python -c \"import matplotlib; print(matplotlib.matplotlib_fname())\"" 
 
 # No requirement to build any C libraries
 build: off
