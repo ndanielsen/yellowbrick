@@ -2,7 +2,7 @@
 # https://ci.appveyor.com/project/districtdatalabs/yellowbrick
 
 image:
-  - Visual Studio 2017
+  - Visual Studio 2017 Preview
 
 version: 0.9.{build}
 pull_requests:
