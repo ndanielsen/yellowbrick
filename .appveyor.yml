@@ -64,6 +64,7 @@ install:
             conda env create -f tests/requirements.txt -n yellowbrick &&
             call activate yellowbrick
           )"
+  - "activate yellowbrick"
   - "python -m nltk.downloader popular"
 
 # No requirement to build any C libraries
