@@ -61,10 +61,10 @@ install:
           ) ELSE (
             conda update -n base conda --yes &&
             conda config --add channels conda-forge &&
-            conda env create -f tests/requirements.txt -n yellowbrick &&
-            call activate yellowbrick
+            conda create -n yellowbrick -y &&
+            conda install --name yellowbrick --file tests/requirements.txt -y && 
+            conda activate yellowbrick
           )"
-  - "activate yellowbrick"
   - "python -m nltk.downloader popular"
 
 # No requirement to build any C libraries
