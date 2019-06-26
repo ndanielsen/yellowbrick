@@ -38,12 +38,12 @@ environment:
 
         - PYTHON: "C:\\Miniconda36-x64"
           PYTHON_VERSION: "3.6"
-          MINICONDA_VERSION: "4.5.4"
+          MINICONDA_VERSION: "latest"
           PYTHON_ARCH: "64"
 
         - PYTHON: "C:\\Miniconda37-x64"
           PYTHON_VERSION: "3.7"
-          MINICONDA_VERSION: "4.5.12"
+          MINICONDA_VERSION: "latest"
           PYTHON_ARCH: "64"
 
 
