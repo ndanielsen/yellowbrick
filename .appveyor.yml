@@ -66,7 +66,7 @@ install:
             conda install --name yellowbrick --file tests/requirements.txt -y && 
             conda activate yellowbrick
           )"
-  - "python -m nltk.downloader popular"
+  - "conda activate yellowbrick && python -m nltk.downloader popular"
 
 # No requirement to build any C libraries
 build: off
