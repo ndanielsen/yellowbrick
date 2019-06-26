@@ -82,11 +82,11 @@ cache:
     # Use the appveryor cache to avoid redownload of numpy and scipy wheels
     - '%APPDATA%\pip\Cache'
 
-notifications:
-    - provider: Slack
-      auth_token:
-        secure: 6hd0IQ66qUUiStas9s304izgV7Wh0XyY0gFjuua7H8gtYle41gbFozkfKgzs110oK/iT4XKWrNfWOgz3S5Jcp2SGFXQ9IvF5ZqYmX71ZQRY=
-      channel: '#yb-ci'
-      on_build_success: true
-      on_build_failure: true
-      on_build_status_changed: true
+# notifications:
+#     - provider: Slack
+#       auth_token:
+#         secure: 6hd0IQ66qUUiStas9s304izgV7Wh0XyY0gFjuua7H8gtYle41gbFozkfKgzs110oK/iT4XKWrNfWOgz3S5Jcp2SGFXQ9IvF5ZqYmX71ZQRY=
+#       channel: '#yb-ci'
+#       on_build_success: true
+#       on_build_failure: true
+#       on_build_status_changed: true
