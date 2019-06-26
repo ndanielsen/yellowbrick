@@ -61,7 +61,7 @@ install:
           ) ELSE (
             conda update -n base conda --yes &&
             conda config --add channels conda-forge &&
-            conda activate base &&
+            call activate base &&
             conda create -n yellowbrick -y &&
             conda install --name yellowbrick --file tests/requirements.txt -y && 
             conda activate yellowbrick
