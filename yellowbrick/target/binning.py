@@ -1,13 +1,12 @@
-
 # yellowbrick.target.binning
 # Implementations of histogram with vertical lines to help with balanced binning.
 #
-# Author:   Juan L. Kehoe (juanluo2008@gmail.com)
-# Author:   Prema Damodaran Roman (pdamo24@gmail.com)
+# Author:   Juan L. Kehoe
+# Author:   Prema Damodaran Roman
 
 # Created:  Tue Mar 13 19:50:54 2018 -0400
 #
-# Copyright (C) 2018 District Data Labs
+# Copyright (C) 2018 The scikit-yb developers
 # For license information, see LICENSE.txt
 #
 # ID: binning.py
@@ -17,17 +16,17 @@ Implements histogram with vertical lines to help with balanced binning.
 """
 
 ##########################################################################
-## Imports
+# Imports
 ##########################################################################
-import matplotlib.pyplot as plt
 import numpy as np
 
-from .base import TargetVisualizer
+from yellowbrick.target.base import TargetVisualizer
 from yellowbrick.exceptions import YellowbrickValueError
 
 ##########################################################################
-## Balanced Binning Reference
+# Balanced Binning Reference
 ##########################################################################
+
 
 class BalancedBinningReference(TargetVisualizer):
     """
@@ -41,7 +40,7 @@ class BalancedBinningReference(TargetVisualizer):
         This is inherited from FeatureVisualizer and is defined within
         ``BalancedBinningReference``.
 
-    target : string, default: "Frequency"
+    target : string, default: "y"
         The name of the ``y`` variable
 
     bins : number of bins to generate the histogram, default: 4
@@ -49,16 +48,16 @@ class BalancedBinningReference(TargetVisualizer):
     kwargs : dict
         Keyword arguments that are passed to the base class and may influence
         the visualization as defined in other Visualizers.
-        
+
     Attributes
     ----------
-    bin_edges : binning reference values
+    bin_edges_ : binning reference values
 
     Examples
     --------
     >>> visualizer = BalancedBinningReference()
     >>> visualizer.fit(y)
-    >>> visualizer.poof()
+    >>> visualizer.show()
 
 
     Notes
@@ -89,8 +88,10 @@ class BalancedBinningReference(TargetVisualizer):
         self.bin_edges_ = bin_edges
         self.ax.hist(y, bins=self.bins, color=kwargs.pop("color", "#6897bb"), **kwargs)
 
-        # add vetical line with binning reference values
-        plt.vlines(bin_edges,0,max(hist),colors=kwargs.pop("colors", "r"))
+        # add vertical line with binning reference values
+        self.ax.vlines(bin_edges, 0, max(hist), colors=kwargs.pop("colors", "r"))
+
+        return self.ax
 
     def fit(self, y, **kwargs):
         """
@@ -107,26 +108,30 @@ class BalancedBinningReference(TargetVisualizer):
 
         """
 
-        #throw an error if y has more than 1 column
+        # throw an error if y has more than 1 column
         if y.ndim > 1:
-            raise YellowbrickValueError("y needs to be an array or Series with one dimension") 
+            raise YellowbrickValueError(
+                "y needs to be an array or Series with one dimension"
+            )
 
         # Handle the target name if it is None.
         if self.target is None:
-            self.target = 'Frequency'
+            self.target = "y"
 
         self.draw(y)
         return self
 
     def finalize(self, **kwargs):
         """
-        Finalize executes any subclass-specific axes finalization steps.
-        The user calls poof and poof calls finalize.
+        Adds the x-axis label and manages the tick labels to ensure they're visible.
 
         Parameters
         ----------
         kwargs: generic keyword arguments.
 
+        Notes
+        -----
+        Generally this method is called from show and not directly by the user.
         """
         self.ax.set_xlabel(self.target)
         for tk in self.ax.get_xticklabels():
@@ -137,11 +142,12 @@ class BalancedBinningReference(TargetVisualizer):
 
 
 ##########################################################################
-## Quick Method
+# Quick Method
 ##########################################################################
-        
-def balanced_binning_reference(y, ax=None, target='Frequency', bins=4, **kwargs):
-    
+
+
+def balanced_binning_reference(y, ax=None, target="y", bins=4, **kwargs):
+
     """
     BalancedBinningReference generates a histogram with vertical lines
     showing the recommended value point to bin your data so they can be evenly
@@ -150,12 +156,12 @@ def balanced_binning_reference(y, ax=None, target='Frequency', bins=4, **kwargs)
     Parameters
     ----------
     y : an array of one dimension or a pandas Series
-    
+
     ax : matplotlib Axes, default: None
         This is inherited from FeatureVisualizer and is defined within
         ``BalancedBinningReference``.
 
-    target : string, default: "Frequency"
+    target : string, default: "y"
         The name of the ``y`` variable
 
     bins : number of bins to generate the histogram, default: 4
@@ -164,18 +170,17 @@ def balanced_binning_reference(y, ax=None, target='Frequency', bins=4, **kwargs)
         Keyword arguments that are passed to the base class and may influence
         the visualization as defined in other Visualizers.
 
+    Returns
+    -------
+    visualizer : BalancedBinningReference
+        Returns fitted visualizer
     """
 
     # Initialize the visualizer
     visualizer = BalancedBinningReference(ax=ax, bins=bins, target=target, **kwargs)
-    
-    # Fit and poof the visualizer
+
+    # Fit and show the visualizer
     visualizer.fit(y)
-    visualizer.poof()
-    
-    
+    visualizer.show()
 
-    
-    
-    
-
+    return visualizer

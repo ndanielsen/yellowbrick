@@ -20,16 +20,14 @@ At the moment we have the following feature analysis visualizers implemented:
    detect classes or clusters
 -  :doc:`pca`: project higher dimensions into a visual space using PCA
 -  :doc:`manifold`: visualize high dimensional data using manifold learning
--  :doc:`importances`: rank features by relative importance in a model
--  :doc:`rfecv`: select a subset of features by importance
 -  :doc:`jointplot`: (aka Jointplots) plot 2D correlation between features and target
 
 Feature analysis visualizers implement the ``Transformer`` API from
 scikit-learn, meaning they can be used as intermediate transform steps
 in a ``Pipeline`` (particularly a ``VisualPipeline``). They are
 instantiated in the same way, and then fit and transform are called on
-them, which draws the instances correctly. Finally ``poof`` or ``show``
-is called which displays the image.
+them, which draws the instances correctly. Finally ``show`` is called which
+finalizes and displays the image.
 
 .. code:: python
 
@@ -41,8 +39,6 @@ is called which displays the image.
     from yellowbrick.features.jointplot import JointPlotVisualizer
     from yellowbrick.features.pca import PCADecomposition
     from yellowbrick.features.manifold import Manifold
-    from yellowbrick.features.importances import FeatureImportances
-    from yellowbrick.features.rfecv import RFECV
 
 
 .. toctree::
@@ -53,6 +49,4 @@ is called which displays the image.
    pcoords
    pca
    manifold
-   importances
-   rfecv
    jointplot

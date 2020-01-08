@@ -14,9 +14,7 @@
 
 **Visual analysis and diagnostic tools to facilitate machine learning model selection.**
 
-[![Classifiers](docs/images/readme/classifiers.png)](https://www.scikit-yb.org/en/latest/gallery.html)
-[![Clusterers](docs/images/readme/clusterers.png)](https://www.scikit-yb.org/en/latest/gallery.html)
-[![Regressors](docs/images/readme/regressors.png)](https://www.scikit-yb.org/en/latest/gallery.html)
+[![Banner](docs/images/readme/banner.png)](https://www.scikit-yb.org/en/latest/gallery.html)
 
 ## What is Yellowbrick?
 
@@ -40,8 +38,6 @@ If you're using Anaconda (recommended for Windows users), you can take advantage
 
     conda install -c districtdatalabs yellowbrick
 
-Note, however, that there is a [known bug](https://github.com/DistrictDataLabs/yellowbrick/issues/205) installing Yellowbrick on Linux with Anaconda.
-
 ## Using Yellowbrick
 
 The Yellowbrick API is specifically designed to play nicely with scikit-learn. Here is an example of a typical workflow sequence with scikit-learn and Yellowbrick:
@@ -58,7 +54,7 @@ visualizer = Rank2D(
 )
 visualizer.fit(X, y)                # Fit the data to the visualizer
 visualizer.transform(X)             # Transform the data
-visualizer.poof()                   # Show the data
+visualizer.show()                   # Finalize and render the figure
 ```
 
 ### Model Visualization
@@ -73,30 +69,30 @@ model = LinearSVC()
 model.fit(X,y)
 visualizer = ROCAUC(model)
 visualizer.score(X,y)
-visualizer.poof()
+visualizer.show()
 ```
 
-For additional information on getting started with Yellowbrick, view the quickstart guide in the [documentation](https://www.scikit-yb.org/en/latest/) and check out our [examples notebook](https://github.com/DistrictDataLabs/yellowbrick/blob/develop/examples/examples.ipynb).
+For additional information on getting started with Yellowbrick, view the [Quick Start Guide](https://www.scikit-yb.org/en/latest/quickstart.html) in the [documentation](https://www.scikit-yb.org/en/latest/) and check out our [examples notebook](https://github.com/DistrictDataLabs/yellowbrick/blob/develop/examples/examples.ipynb).
 
 ## Contributing to Yellowbrick
 
 Yellowbrick is an open source project that is supported by a community who will gratefully and humbly accept any contributions you might make to the project. Large or small, any contribution makes a big difference; and if you've never contributed to an open source project before, we hope you will start with Yellowbrick!
 
-If you are interested in contributing, check out our [contributor's guide](https://www.scikit-yb.org/en/latest/contributing.html). Beyond creating visualizers, there are many ways to contribute:
+If you are interested in contributing, check out our [contributor's guide](https://www.scikit-yb.org/en/latest/contributing/index.html). Beyond creating visualizers, there are many ways to contribute:
 
 - Submit a bug report or feature request on [GitHub Issues](https://github.com/DistrictDataLabs/yellowbrick/issues).
-- Contribute a Jupyter notebook to our examples[ gallery](https://github.com/DistrictDataLabs/yellowbrick/tree/develop/examples).
+- Contribute a Jupyter notebook to our examples [gallery](https://github.com/DistrictDataLabs/yellowbrick/tree/develop/examples).
 - Assist us with [user testing](https://www.scikit-yb.org/en/latest/evaluation.html).
 - Add to the documentation or help with our website, [scikit-yb.org](https://www.scikit-yb.org).
-- [Write unit or integration tests](https://www.scikit-yb.org/en/latest/contributing.html#testing) for our project.
+- Write [unit or integration tests](https://www.scikit-yb.org/en/latest/contributing/developing_visualizers.html#integration-tests) for our project.
 - Answer questions on our issues, mailing list, Stack Overflow, and elsewhere.
 - Translate our documentation into another language.
 - Write a blog post, tweet, or share our project with others.
-- Teach someone how to use Yellowbrick.
+- [Teach](https://www.scikit-yb.org/en/latest/teaching.html) someone how to use Yellowbrick.
 
 As you can see, there are lots of ways to get involved and we would be very happy for you to join us! The only thing we ask is that you abide by the principles of openness, respect, and consideration of others as described in the [Python Software Foundation Code of Conduct](https://www.python.org/psf/codeofconduct/).
 
-For more information, checkout the `CONTRIBUTING.md` file in the root of the repository or the detailed documentation at [Contributing to Yellowbrick](https://www.scikit-yb.org/en/latest/contributing.html)
+For more information, checkout the `CONTRIBUTING.md` file in the root of the repository or the detailed documentation at [Contributing to Yellowbrick](https://www.scikit-yb.org/en/latest/contributing/index.html)
 
 ## Yellowbrick Datasets
 
@@ -117,3 +113,7 @@ _This will remove old datasets and download the new ones. You can also use the `
 ## Citing Yellowbrick
 
 We would be glad if you used Yellowbrick in your scientific publications! If you do, please cite us using the [citation guidelines](https://www.scikit-yb.org/en/latest/about.html#citing-yellowbrick).
+
+## Affiliations
+
+[![District Data Labs](docs/images/readme/affiliates_ddl.png)](https://districtdatalabs.com/) [![NumFOCUS Affiliated Project](docs/images/readme/affiliates_numfocus.png)](https://numfocus.org)

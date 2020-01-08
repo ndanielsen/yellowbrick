@@ -1,13 +1,13 @@
 # tests.test_contrib.test_scatter
 # Test the ScatterViz feature analysis visualizers
 #
-# Author:   Nathan Danielsen <nathan.danielsen@gmail.com>
+# Author:   Nathan Danielsen
 # Created:  Fri Feb 26 19:40:00 2017 -0400
 #
-# Copyright (C) 2016 District Data Labs
+# Copyright (C) 2016 The scikit-yb developers
 # For license information, see LICENSE.txt
 #
-# ID: test_scatter.py [fc94ec4] ndanielsen@users.noreply.github.com $
+# ID: test_scatter.py [a89633e] benjamin@bengfort.com $
 """
 Test the ScatterViz feature analysis visualizers
 """
@@ -18,16 +18,13 @@ Test the ScatterViz feature analysis visualizers
 
 import pytest
 import numpy as np
-import matplotlib as mptl
-
-from yellowbrick.style import palettes
-from yellowbrick.contrib.scatter import *
-from yellowbrick.datasets import load_occupancy
-from yellowbrick.exceptions import YellowbrickValueError
-from yellowbrick.exceptions import ImageComparisonFailure
 
 from unittest import mock
 from tests.base import VisualTestCase
+from yellowbrick.contrib.scatter import *
+from yellowbrick.datasets import load_occupancy
+from yellowbrick.exceptions import YellowbrickValueError
+from yellowbrick.style import palettes
 
 try:
     import pandas as pd
@@ -39,8 +36,9 @@ except ImportError:
 # ScatterViz Base Tests
 ##########################################################################
 
-@pytest.mark.filterwarnings('ignore')
-class ScatterVizTests(VisualTestCase):
+
+@pytest.mark.filterwarnings("ignore")
+class TestScatterViz(VisualTestCase):
     """
     Test ScatterViz
     """
@@ -53,7 +51,7 @@ class ScatterVizTests(VisualTestCase):
         [2.110, 3.609, 4.330, 7.985, 5.595, ],
         [2.110, 3.626, 4.330, 8.203, 5.621, ],
         [2.110, 3.620, 4.470, 8.210, 5.612, ]
-        ])
+    ])
     # yapf: enable
     y = np.array([1, 0, 1, 0, 1, 0])
 
@@ -62,8 +60,8 @@ class ScatterVizTests(VisualTestCase):
         Test alias for ScatterViz
         """
         features = ["temperature", "relative humidity"]
-        visualizer = ScatterVisualizer(features=features, markers=['*'])
-        self.assertIsNotNone(visualizer.markers)
+        visualizer = ScatterVisualizer(features=features, markers=["*"])
+        assert visualizer.markers is not None
 
     def test_scatter(self):
         """
@@ -78,7 +76,7 @@ class ScatterVizTests(VisualTestCase):
         """
         Assert no errors occur during scatter visualizer integration
         """
-        colors = palettes.PALETTES['pastel']
+        colors = palettes.PALETTES["pastel"]
         X_two_cols = self.X[:, :2]
         features = ["temperature", "relative humidity"]
         visualizer = ScatterViz(features=features, color=colors)
@@ -90,8 +88,8 @@ class ScatterVizTests(VisualTestCase):
         """
         X_two_cols = self.X[:, :2]
         visualizer = ScatterViz()
-        visualizer.fit_transform_poof(X_two_cols, self.y)
-        self.assertEquals(visualizer.features_, ['Feature One', 'Feature Two'])
+        visualizer.fit_transform_show(X_two_cols, self.y)
+        assert visualizer.features_ == ["Feature One", "Feature Two"]
 
     def test_scatter_only_two_features_allowed_init(self):
         """
@@ -99,7 +97,7 @@ class ScatterVizTests(VisualTestCase):
         """
         features = ["temperature", "relative humidity", "light"]
 
-        with self.assertRaises(YellowbrickValueError):
+        with pytest.raises(YellowbrickValueError):
             ScatterViz(features=features)
 
     def test_scatter_xy_and_features_raise_error(self):
@@ -108,25 +106,23 @@ class ScatterVizTests(VisualTestCase):
         """
         features = ["temperature", "relative humidity", "light"]
 
-        with self.assertRaises(YellowbrickValueError):
-            ScatterViz(features=features, x='one', y='two')
+        with pytest.raises(YellowbrickValueError):
+            ScatterViz(features=features, x="one", y="two")
 
     def test_scatter_xy_changes_to_features(self):
         """
         Assert that x,y with no features will not raise scatterviz error
         """
-        visualizer = ScatterViz(x='one', y='two')
-        self.assertEquals(visualizer.features_, ['one', 'two'])
+        visualizer = ScatterViz(x="one", y="two")
+        assert visualizer.features == ["one", "two"]
 
     def test_scatter_requires_two_features_in_numpy_matrix(self):
         """
         Assert only two features allowed for scatter visualizer if not in init
         """
         visualizer = ScatterViz()
-        with self.assertRaises(YellowbrickValueError) as context:
+        with pytest.raises(YellowbrickValueError, match="only accepts two features"):
             visualizer.fit_transform(self.X, self.y)
-            self.assertTrue(
-                'only accepts two features' in str(context.exception))
 
     def test_integrated_scatter(self):
         """
@@ -138,7 +134,7 @@ class ScatterVizTests(VisualTestCase):
         # Test the visualizer
         features = ["temperature", "relative humidity"]
         visualizer = ScatterViz(features=features)
-        visualizer.fit_transform_poof(X[:, :2], y)
+        visualizer.fit_transform_show(X[:, :2], y)
 
     def test_alpha_param(self):
         """
@@ -159,7 +155,6 @@ class ScatterVizTests(VisualTestCase):
         assert "alpha" in scatter_kwargs
         assert scatter_kwargs["alpha"] == 0.7
 
-
     def test_scatter_quick_method(self):
         """
         Test scatter quick method on the real, occupancy data set
@@ -169,10 +164,10 @@ class ScatterVizTests(VisualTestCase):
 
         # Test the visualizer
         features = ["temperature", "relative humidity"]
-        ax = scatterviz(X[:, :2], y=y, ax=None, features=features)
+        viz = scatterviz(X[:, :2], y=y, ax=None, features=features)
 
         # test that is returns a matplotlib obj with axes
-        self.assertIsInstance(ax, mptl.axes.Axes)
+        assert isinstance(viz, ScatterVisualizer)
 
     @pytest.mark.skipif(pd is None, reason="pandas is required for this test")
     def test_integrated_scatter_with_pandas(self):
@@ -186,36 +181,32 @@ class ScatterVizTests(VisualTestCase):
         # Test the visualizer
         features = ["temperature", "relative humidity"]
         visualizer = ScatterViz(features=features)
-        visualizer.fit_transform_poof(X, y)
+        visualizer.fit_transform_show(X, y)
 
     @pytest.mark.xfail(reason="numpy structured arrays have changed since v1.14")
     def test_integrated_scatter_numpy_named_arrays(self):
         """
         Test scatterviz on numpy named arrays
         """
-        dt = np.dtype({
-            'names': ['one', 'two', 'three', 'four', "five"],
-            'formats': [
-                np.float64,
-                np.float64,
-                np.float64,
-                np.float64,
-                np.float64,
-            ]
-        })
+        dt = np.dtype(
+            {
+                "names": ["one", "two", "three", "four", "five"],
+                "formats": [np.float64, np.float64, np.float64, np.float64, np.float64],
+            }
+        )
 
-        X_named = self.X.astype(dt, casting='unsafe')
-        visualizer = ScatterViz(features=['one', 'two'])
-        visualizer.fit_transform_poof(X_named, self.y)
-        self.assertEquals(visualizer.features_, ['one', 'two'])
+        X_named = self.X.astype(dt, casting="unsafe")
+        visualizer = ScatterViz(features=["one", "two"])
+        visualizer.fit_transform_show(X_named, self.y)
+        assert visualizer.features_ == ["one", "two"]
 
     def test_integrated_scatter_numpy_arrays_no_names(self):
         """
         Test scaterviz on regular numpy arrays
         """
         visualizer = ScatterViz(features=[1, 2])
-        visualizer.fit_transform_poof(self.X, self.y)
-        self.assertEquals(visualizer.features_, [1, 2])
+        visualizer.fit_transform_show(self.X, self.y)
+        assert visualizer.features_ == [1, 2]
 
     def test_scatter_image(self):
         """
@@ -230,17 +221,3 @@ class ScatterVizTests(VisualTestCase):
         visualizer.draw(X_two_cols, self.y)
 
         self.assert_images_similar(visualizer)
-
-    def test_scatter_image_fail(self):
-        """
-        Assert bad image similarity on scatterviz errors
-        """
-
-        X_two_cols = self.X[:, :2]
-        features = ["temperature", "relative humidity"]
-        visualizer = ScatterViz(features=features)
-        visualizer.fit(X_two_cols, self.y)
-        visualizer.draw(X_two_cols, self.y)
-
-        with self.assertRaises(ImageComparisonFailure):
-            self.assert_images_similar(visualizer)

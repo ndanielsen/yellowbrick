@@ -1,10 +1,10 @@
 # yellowbrick.features.rankd
 # Implements 1D (histograms) and 2D (joint plot) feature rankings.
 #
-# Author:   Benjamin Bengfort <bbengfort@districtdatalabs.com>
+# Author:   Benjamin Bengfort
 # Created:  Fri Oct 07 15:14:01 2016 -0400
 #
-# Copyright (C) 2016 District Data Labs
+# Copyright (C) 2016 The scikit-yb developers
 # For license information, see LICENSE.txt
 #
 # ID: rankd.py [ee754dc] benjamin@bengfort.com $
@@ -17,14 +17,17 @@ Implements 1D (histograms) and 2D (joint plot) feature rankings.
 ## Imports
 ##########################################################################
 
+import warnings
 import numpy as np
+import matplotlib as mpl
+
 from scipy.stats import shapiro
 from scipy.stats import spearmanr
 from scipy.stats import kendalltau as sp_kendalltau
 
 from yellowbrick.utils import is_dataframe
 from yellowbrick.features.base import MultiFeatureVisualizer
-from yellowbrick.exceptions import YellowbrickValueError
+from yellowbrick.exceptions import YellowbrickValueError, YellowbrickWarning
 
 
 __all__ = ["rank1d", "rank2d", "Rank1D", "Rank2D"]
@@ -33,6 +36,7 @@ __all__ = ["rank1d", "rank2d", "Rank1D", "Rank2D"]
 ##########################################################################
 ## Metrics
 ##########################################################################
+
 
 def kendalltau(X):
     """
@@ -48,13 +52,14 @@ def kendalltau(X):
     corrs = np.zeros((X.shape[1], X.shape[1]))
     for idx, cola in enumerate(X.T):
         for jdx, colb in enumerate(X.T):
-            corrs[idx, jdx] = sp_kendalltau(cola,colb)[0]
+            corrs[idx, jdx] = sp_kendalltau(cola, colb)[0]
     return corrs
 
 
 ##########################################################################
 ## Base Feature Visualizer
 ##########################################################################
+
 
 class RankDBase(MultiFeatureVisualizer):
     """
@@ -65,6 +70,10 @@ class RankDBase(MultiFeatureVisualizer):
     ax : matplotlib Axes, default: None
         The axis to plot the figure on. If None is passed in the current axes
         will be used (or generated if required).
+
+    fig : matplotlib Figure, default: None
+        The figure to plot the Visualizer on. If None is passed in the current
+        plot will be used (or generated if required).
 
     algorithm : string
         The ranking algorithm to use; options and defaults vary by subclass
@@ -95,7 +104,7 @@ class RankDBase(MultiFeatureVisualizer):
     >>> visualizer = Rank2D()
     >>> visualizer.fit(X, y)
     >>> visualizer.transform(X)
-    >>> visualizer.poof()
+    >>> visualizer.show()
 
     Notes
     -----
@@ -105,13 +114,20 @@ class RankDBase(MultiFeatureVisualizer):
 
     ranking_methods = {}
 
-    def __init__(self, ax=None, algorithm=None, features=None,
-                 show_feature_names=True, **kwargs):
+    def __init__(
+        self,
+        ax=None,
+        fig=None,
+        algorithm=None,
+        features=None,
+        show_feature_names=True,
+        **kwargs
+    ):
         """
         Initialize the class with the options required to rank and
         order features as well as visualize the result.
         """
-        super(RankDBase, self).__init__(ax=ax, features=features, **kwargs)
+        super(RankDBase, self).__init__(ax=ax, fig=fig, features=features, **kwargs)
 
         # Data Parameters
         self.ranking_ = algorithm
@@ -180,16 +196,26 @@ class RankDBase(MultiFeatureVisualizer):
 
     def finalize(self, **kwargs):
         """
-        Finalize executes any subclass-specific axes finalization steps.
-        The user calls poof and poof calls finalize.
+        Sets a title on the RankD plot.
 
         Parameters
         ----------
-        kwargs: dict
-            generic keyword arguments
+        kwargs: generic keyword arguments.
 
+        Notes
+        -----
+        Generally this method is called from show and not directly by the user.
         """
-        # Set the title
+        # There is a known bug in matplotlib 3.1.1 that affects RankD plots
+        # See #912 and #914 for details.
+        if mpl.__version__ == "3.1.1":
+            msg = (
+                "RankD plots may be clipped when using matplotlib v3.1.1, "
+                "upgrade to matplotlib v3.1.2 or later to fix the plots."
+            )
+            warnings.warn(msg, YellowbrickWarning)
+
+        # Set the title for all RankD visualizations.
         self.set_title(
             "{} Ranking of {} Features".format(
                 self.ranking_.title(), len(self.features_)
@@ -200,6 +226,7 @@ class RankDBase(MultiFeatureVisualizer):
 ##########################################################################
 ## Rank 1D Feature Visualizer
 ##########################################################################
+
 
 class Rank1D(RankDBase):
     """
@@ -228,6 +255,9 @@ class Rank1D(RankDBase):
         If True, the feature names are used to label the x and y ticks in the
         plot.
 
+    color: string
+        Specify color for barchart
+
     kwargs : dict
         Keyword arguments that are passed to the base class and may influence
         the visualization as defined in other Visualizers.
@@ -243,32 +273,42 @@ class Rank1D(RankDBase):
     >>> visualizer = Rank1D()
     >>> visualizer.fit(X, y)
     >>> visualizer.transform(X)
-    >>> visualizer.poof()
+    >>> visualizer.show()
     """
 
-    ranking_methods = {
-        'shapiro': lambda X: np.array([shapiro(x)[0] for x in X.T]),
-    }
+    ranking_methods = {"shapiro": lambda X: np.array([shapiro(x)[0] for x in X.T])}
 
-    def __init__(self, ax=None, algorithm='shapiro', features=None,
-                 orient='h', show_feature_names=True, **kwargs):
+    def __init__(
+        self,
+        ax=None,
+        algorithm="shapiro",
+        features=None,
+        orient="h",
+        show_feature_names=True,
+        color=None,
+        **kwargs
+    ):
         """
         Initialize the class with the options required to rank and
         order features as well as visualize the result.
         """
         super(Rank1D, self).__init__(
-            ax=ax, algorithm=algorithm, features=features,
-            show_feature_names=show_feature_names, **kwargs
+            ax=ax,
+            algorithm=algorithm,
+            features=features,
+            show_feature_names=show_feature_names,
+            **kwargs
         )
+        self.color = color
         self.orientation_ = orient
 
     def draw(self, **kwargs):
         """
         Draws the bar plot of the ranking array of features.
         """
-        if self.orientation_ == 'h':
+        if self.orientation_ == "h":
             # Make the plot
-            self.ax.barh(np.arange(len(self.ranks_)), self.ranks_, color='b')
+            self.ax.barh(np.arange(len(self.ranks_)), self.ranks_, color=self.color)
 
             # Add ticks and tick labels
             self.ax.set_yticks(np.arange(len(self.ranks_)))
@@ -283,9 +323,9 @@ class Rank1D(RankDBase):
             # Turn off y grid lines
             self.ax.yaxis.grid(False)
 
-        elif self.orientation_ == 'v':
+        elif self.orientation_ == "v":
             # Make the plot
-            self.ax.bar(np.arange(len(self.ranks_)), self.ranks_, color='b')
+            self.ax.bar(np.arange(len(self.ranks_)), self.ranks_, color=self.color)
 
             # Add ticks and tick labels
             self.ax.set_xticks(np.arange(len(self.ranks_)))
@@ -298,14 +338,13 @@ class Rank1D(RankDBase):
             self.ax.xaxis.grid(False)
 
         else:
-            raise YellowbrickValueError(
-                "Orientation must be 'h' or 'v'"
-            )
+            raise YellowbrickValueError("Orientation must be 'h' or 'v'")
 
 
 ##########################################################################
 ## Rank 2D Feature Visualizer
 ##########################################################################
+
 
 class Rank2D(RankDBase):
     """
@@ -353,7 +392,7 @@ class Rank2D(RankDBase):
     >>> visualizer = Rank2D()
     >>> visualizer.fit(X, y)
     >>> visualizer.transform(X)
-    >>> visualizer.poof()
+    >>> visualizer.show()
 
     Notes
     -----
@@ -362,23 +401,33 @@ class Rank2D(RankDBase):
     """
 
     ranking_methods = {
-        'pearson': lambda X: np.corrcoef(X.transpose()),
-        'covariance': lambda X: np.cov(X.transpose()),
-        'spearman': lambda X: spearmanr(X, axis=0)[0],
-        'kendalltau': lambda X: kendalltau(X)
+        "pearson": lambda X: np.corrcoef(X.transpose()),
+        "covariance": lambda X: np.cov(X.transpose()),
+        "spearman": lambda X: spearmanr(X, axis=0)[0],
+        "kendalltau": lambda X: kendalltau(X),
     }
 
-    def __init__(self, ax=None, algorithm='pearson', features=None,
-                 colormap='RdBu_r', show_feature_names=True, **kwargs):
+    def __init__(
+        self,
+        ax=None,
+        algorithm="pearson",
+        features=None,
+        colormap="RdBu_r",
+        show_feature_names=True,
+        **kwargs
+    ):
         """
         Initialize the class with the options required to rank and
         order features as well as visualize the result.
         """
         super(Rank2D, self).__init__(
-            ax=ax, algorithm=algorithm, features=features,
-            show_feature_names=show_feature_names, **kwargs
+            ax=ax,
+            algorithm=algorithm,
+            features=features,
+            show_feature_names=show_feature_names,
+            **kwargs
         )
-        self.colormap=colormap
+        self.colormap = colormap
 
     def draw(self, **kwargs):
         """
@@ -397,9 +446,7 @@ class Rank2D(RankDBase):
         mesh = self.ax.pcolormesh(data, cmap=self.colormap, vmin=-1, vmax=1)
 
         # Set the Axis limits
-        self.ax.set(
-            xlim=(0, data.shape[1]), ylim=(0, data.shape[0])
-        )
+        self.ax.set(xlim=(0, data.shape[1]), ylim=(0, data.shape[0]))
 
         # Add the colorbar
         cb = self.ax.figure.colorbar(mesh, None, self.ax)
@@ -423,8 +470,18 @@ class Rank2D(RankDBase):
 ## Quick Methods
 ##########################################################################
 
-def rank1d(X, y=None, ax=None, algorithm='shapiro', features=None,
-           orient='h', show_feature_names=True, **kwargs):
+
+def rank1d(
+    X,
+    y=None,
+    ax=None,
+    algorithm="shapiro",
+    features=None,
+    orient="h",
+    show_feature_names=True,
+    color=None,
+    **kwargs
+):
     """Scores each feature with the algorithm and ranks them in a bar plot.
 
     This helper function is a quick wrapper to utilize the Rank1D Visualizer
@@ -456,25 +513,44 @@ def rank1d(X, y=None, ax=None, algorithm='shapiro', features=None,
         If True, the feature names are used to label the axis ticks in the
         plot.
 
+    color: string
+        Specify color for barchart
+
     Returns
     -------
-    ax : matplotlib axes
-        Returns the axes that the parallel coordinates were drawn on.
+    viz : Rank1D
+        Returns the fitted, finalized visualizer.
 
     """
     # Instantiate the visualizer
-    visualizer = Rank1D(ax, algorithm, features, orient, show_feature_names,
-                        **kwargs)
+    visualizer = Rank1D(
+        ax=ax,
+        algorithm=algorithm,
+        features=features,
+        orient=orient,
+        show_feature_names=show_feature_names,
+        color=color,
+        **kwargs
+    )
 
     # Fit and transform the visualizer (calls draw)
     visualizer.fit(X, y, **kwargs)
     visualizer.transform(X)
 
-    # Return the axes object on the visualizer
-    return visualizer.ax
+    # Return the visualizer object
+    return visualizer
 
-def rank2d(X, y=None, ax=None, algorithm='pearson', features=None,
-           show_feature_names=True, colormap='RdBu_r', **kwargs):
+
+def rank2d(
+    X,
+    y=None,
+    ax=None,
+    algorithm="pearson",
+    features=None,
+    show_feature_names=True,
+    colormap="RdBu_r",
+    **kwargs
+):
     """Displays pairwise comparisons of features with the algorithm and ranks
     them in a lower-left triangle heatmap plot.
 
@@ -511,17 +587,23 @@ def rank2d(X, y=None, ax=None, algorithm='pearson', features=None,
 
     Returns
     -------
-    ax : matplotlib axes
-        Returns the axes that the parallel coordinates were drawn on.
+    viz : Rank2D
+        Returns the fitted, finalized visualizer
 
     """
     # Instantiate the visualizer
-    visualizer = Rank2D(ax, algorithm, features, colormap, show_feature_names,
-                        **kwargs)
+    visualizer = Rank2D(
+        ax=ax,
+        algorithm=algorithm,
+        features=features,
+        colormap=colormap,
+        show_feature_names=show_feature_names,
+        **kwargs
+    )
 
     # Fit and transform the visualizer (calls draw)
     visualizer.fit(X, y, **kwargs)
     visualizer.transform(X)
 
-    # Return the axes object on the visualizer
-    return visualizer.ax
+    # Return the visualizer object
+    return visualizer
