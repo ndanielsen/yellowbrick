@@ -1,13 +1,13 @@
 # yellowbrick.colors
 # Colors and color helpers brought in from a different library.
 #
-# Author:   Benjamin Bengfort <bbengfort@districtdatalabs.com>
+# Author:   Benjamin Bengfort
 # Created:  Fri Jun 24 17:02:53 2016 -0400
 #
-# Copyright (C) 2016 District Data Labs
+# Copyright (C) 2016 The scikit-yb developers
 # For license information, see LICENSE.txt
 #
-# ID: colors.py [] benjamin@bengfort.com $
+# ID: colors.py [c6aff34] benjamin@bengfort.com $
 
 """
 Colors and color helpers brought in from an alternate library.
@@ -25,11 +25,13 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 from copy import copy
-from six import string_types
+
 from yellowbrick.exceptions import YellowbrickValueError
+
 
 # Check to see if matplotlib is at least sorta up to date
 from distutils.version import LooseVersion
+
 mpl_ge_150 = LooseVersion(mpl.__version__) >= "1.5.0"
 
 
@@ -37,74 +39,119 @@ mpl_ge_150 = LooseVersion(mpl.__version__) >= "1.5.0"
 ## Color Utilities
 ##########################################################################
 
+
 def get_color_cycle():
     """
     Returns the current color cycle from matplotlib.
     """
     if mpl_ge_150:
-        cyl = mpl.rcParams['axes.prop_cycle']
+        cyl = mpl.rcParams["axes.prop_cycle"]
         # matplotlib 1.5 verifies that axes.prop_cycle *is* a cycler
         # but no garuantee that there's a `color` key.
-        # so users could have a custom rcParmas w/ no color...
+        # so users could have a custom rcParams w/ no color...
         try:
-            return [x['color'] for x in cyl]
+            return [x["color"] for x in cyl]
         except KeyError:
             pass  # just return axes.color style below
-    return mpl.rcParams['axes.color_cycle']
+    return mpl.rcParams["axes.color_cycle"]
 
 
-def resolve_colors(num_colors=None, colormap=None, color=None):
+def resolve_colors(n_colors=None, colormap=None, colors=None):
     """
-    Resolves the colormap or the color list with the number of colors.
-    See: https://github.com/pydata/pandas/blob/master/pandas/tools/plotting.py#L163
+    Generates a list of colors based on common color arguments, for example
+    the name of a colormap or palette or another iterable of colors. The list
+    is then truncated (or multiplied) to the specific number of requested
+    colors.
 
     Parameters
     ----------
-    num_colors : int or None
-        the number of colors in the cycle or colormap
+    n_colors : int, default: None
+        Specify the length of the list of returned colors, which will either
+        truncate or multiple the colors available. If None the length of the
+        colors will not be modified.
 
-    colormap : str or None
-        the colormap used to create the sequence of colors
+    colormap : str, yellowbrick.style.palettes.ColorPalette, matplotlib.cm, default: None
+        The name of the matplotlib color map with which to generate colors.
 
-    color : list or Non e
-        the list of colors to specifically use with the plot 
+    colors : iterable, default: None
+        A collection of colors to use specifically with the plot. Overrides
+        colormap if both are specified.
 
+    Returns
+    -------
+    colors : list
+        A list of colors that can be used in matplotlib plots.
+
+    Notes
+    -----
+    This function was originally based on a similar function in the pandas
+    plotting library that has been removed in the new version of the library.
     """
 
-    # Work with the colormap
-    if color is None and colormap is None:
+    # Work with the colormap if specified and colors is not
+    if colormap is not None and colors is None:
+        # Must import here to avoid recursive import
+        from .palettes import PALETTES, ColorPalette
+
         if isinstance(colormap, str):
-            cmap = colormap
-            colormap = cm.get_cmap(colormap)
+            try:
 
-            if colormap is None:
-                raise YellowbrickValueError(
-                    "Colormap {0} is not a valid matploblib cmap".format(cmap)
+                # try to get colormap from PALETTES first
+                _colormap = PALETTES.get(colormap, None)
+
+                if _colormap is None:
+
+                    colormap = cm.get_cmap(colormap)
+                    n_colors = n_colors or len(get_color_cycle())
+                    _colors = list(map(colormap, np.linspace(0, 1, num=n_colors)))
+
+                else:
+
+                    _colors = ColorPalette(_colormap).as_rgb()
+                    n_colors = n_colors or len(_colors)
+
+            except ValueError as e:
+
+                raise YellowbrickValueError(e)
+
+        # if yellowbrick color palette is provided as colormap
+        elif isinstance(colormap, ColorPalette):
+
+            _colors = colormap.as_rgb()
+            n_colors = n_colors or len(_colors)
+
+        # if matplotlib color palette is provided as colormap
+        elif isinstance(colormap, mpl.colors.Colormap):
+            n_colors = n_colors or len(get_color_cycle())
+            _colors = list(map(colormap, np.linspace(0, 1, num=n_colors)))
+        else:
+            raise YellowbrickValueError(
+                "Colormap type {} is not recognized. Possible types are: {}".format(
+                    type(colormap),
+                    ", ".join(
+                        ["yellowbrick.style.ColorPalette,", "matplotlib.cm,", "str"]
+                    ),
                 )
-
-        colors = list(map(colormap, np.linspace(0, 1, num=num_colors)))
-
-    # Work with the color list
-    elif color is not None:
-
-        if colormap is not None:
-            warnings.warn(
-                "'color' and 'colormap' cannot be used simultaneously! Using 'color'."
             )
 
-        colors = list(color) # Ensure colors is a list
+    # Work with the color list
+    elif colors is not None:
+
+        # Warn if both colormap and colors is specified.
+        if colormap is not None:
+            warnings.warn("both colormap and colors specified; using colors")
+
+        _colors = list(colors)  # Ensure colors is a list
 
     # Get the default colors
     else:
-        colors = get_color_cycle()
+        _colors = get_color_cycle()
 
-    if len(colors) != num_colors:
-        multiple = num_colors // len(colors) - 1
-        mod = num_colors % len(colors)
-        colors += multiple * colors
-        colors += colors[:mod]
+    # Truncate or multiple the color list according to the number of colors
+    if n_colors is not None and len(_colors) != n_colors:
+        _colors = [_colors[idx % len(_colors)] for idx in np.arange(n_colors)]
 
-    return colors
+    return _colors
 
 
 class ColorMap(object):
@@ -112,7 +159,7 @@ class ColorMap(object):
     A helper for mapping categorical values to colors on demand.
     """
 
-    def __init__(self, colors='flatui', shuffle=False):
+    def __init__(self, colors="flatui", shuffle=False):
         """
         Specify either a list of colors or one of the color names. If shuffle
         is True then the colors will be shuffled randomly.
@@ -132,7 +179,10 @@ class ColorMap(object):
         """
         Converts color strings into a color listing.
         """
-        if isinstance(value, string_types):
+        if isinstance(value, str):
+            # Must import here to avoid recursive import
+            from .palettes import PALETTES
+
             if value not in PALETTES:
                 raise YellowbrickValueError(
                     "'{}' is not a registered color palette".format(value)

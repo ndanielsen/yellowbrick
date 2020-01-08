@@ -1,13 +1,13 @@
 # yellowbrick.pipeline
 # Implements a visual pipeline that subclasses Scikit-Learn pipelines.
 #
-# Author:   Benjamin Bengfort <bbengfort@districtdatalabs.com>
+# Author:   Benjamin Bengfort
 # Created:  Fri Oct 07 21:41:06 2016 -0400
 #
-# Copyright (C) 2016 District Data Labs
+# Copyright (C) 2016 The sckit-yb developers
 # For license information, see LICENSE.txt
 #
-# ID: pipeline.py [] benjamin@bengfort.com $
+# ID: pipeline.py [1efae1f] benjamin@bengfort.com $
 
 """
 Implements a visual pipeline that subclasses Scikit-Learn pipelines.
@@ -17,13 +17,16 @@ Implements a visual pipeline that subclasses Scikit-Learn pipelines.
 ## Imports
 ##########################################################################
 
+from os import path
 from .base import Visualizer
+from .utils.helpers import slugify
 from sklearn.pipeline import Pipeline
 
 
 ##########################################################################
 ## Visual Pipeline
 ##########################################################################
+
 
 class VisualPipeline(Pipeline):
     """Pipeline of transforms and visualizers with a final estimator.
@@ -34,10 +37,10 @@ class VisualPipeline(Pipeline):
     must implement fit and transform methods.
     The final estimator only needs to implement fit.
 
-    Any step that implements draw or poof methods can be called sequentially
+    Any step that implements draw or show methods can be called sequentially
     directly from the VisualPipeline, allowing multiple visual diagnostics to
     be generated, displayed, and saved on demand.
-    If draw or poof is not called, the visual pipeline should be equivalent to
+    If draw or show is not called, the visual pipeline should be equivalent to
     the simple pipeline to ensure no reduction in performance.
 
     The purpose of the pipeline is to assemble several steps that can be
@@ -66,30 +69,44 @@ class VisualPipeline(Pipeline):
 
     @property
     def visual_steps(self):
-        return dict(
-            step for step in self.steps
-            if isinstance(step[1], Visualizer)
-        )
+        return dict(step for step in self.steps if isinstance(step[1], Visualizer))
 
-    def draw(self, *args, **kwargs):
+    def show(self, outdir=None, ext=".pdf", **kwargs):
         """
-        Calls draw on steps (including the final estimator) that has a draw
-        method and passes the args and kwargs to that draw function.
+        A single entry point to rendering all visualizations in the visual
+        pipeline. The rendering for the output depends on the backend context,
+        but for path based renderings (e.g. saving to a file), specify a
+        directory and extension to compse an outpath to save each
+        visualization (file names will be based on the  named step).
+
+        Parameters
+        ----------
+        outdir : path
+            The directory to save visualizations to.
+
+        ext : string, default = ".pdf"
+            The extension of the file to save the visualization to.
+
+        kwargs : dict
+            Keyword arguments to pass to the ``show()`` method of all steps.
         """
+        axes = []
         for name, step in self.visual_steps.items():
-            step.draw(*args, **kwargs)
+            if outdir is not None:
+                outpath = path.join(outdir, slugify(name) + ext)
+            else:
+                outpath = None
 
-    def poof(self, *args, **kwargs):
-        """
-        Calls poof on steps (including the final estimator) that has a poof
-        method and passes the args and kwargs to that poof function.
-        """
-        for name, step in self.visual_steps.items():
-            step.poof(*args, **kwargs)
+            ax = step.show(outpath=outpath, **kwargs)
+            axes.append(ax)
 
-    def fit_transform_poof(self, X, y=None, **kwargs):
+        # Return axes array to ensure figures are shown in notebook
+        return axes
+
+    def fit_transform_show(self, X, y=None, outpath=None, **kwargs):
         """
-        Fit the model and transforms and then call poof.
+        Fit the model and transforms and then call show.
         """
-        self.fit_transform(X, y, **kwargs)
-        self.poof(**kwargs)
+        Xp = self.fit_transform(X, y, **kwargs)
+        self.show(outpath, **kwargs)
+        return Xp

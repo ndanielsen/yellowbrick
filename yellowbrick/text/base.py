@@ -1,13 +1,13 @@
 # yellowbrick.text.base
 # Base classes for text feature visualizers and feature selection tools.
 #
-# Author:   Rebecca Bilbro <rbilbro@districtdatalabs.com>
-# Created:  2017-01-20 14:44
+# Author:   Rebecca Bilbro
+# Created:  Sat Jan 21 09:37:01 2017 -0500
 #
-# Copyright (C) 2017 District Data Labs
+# Copyright (C) 2017 The scikit-yb developers
 # For license information, see LICENSE.txt
 #
-# ID: base.py [] rbilbro@districtdatalabs.com $
+# ID: base.py [75d9b20] rebecca.bilbro@bytecubed.com $
 
 """
 Base classes for text feature visualizers and text feature selection tools.
@@ -18,12 +18,13 @@ Base classes for text feature visualizers and text feature selection tools.
 ##########################################################################
 
 from yellowbrick.base import Visualizer
-from yellowbrick.utils import is_dataframe
 from sklearn.base import TransformerMixin
+
 
 ##########################################################################
 ## Text Visualizers
 ##########################################################################
+
 
 class TextVisualizer(Visualizer, TransformerMixin):
     """
@@ -39,7 +40,7 @@ class TextVisualizer(Visualizer, TransformerMixin):
     Accepts as input a DataFrame or Numpy array.
     """
 
-    def __init__(self, ax=None, **kwargs):
+    def __init__(self, ax=None, fig=None, **kwargs):
         """
         These parameters can be influenced later on in the visualization
         process, but can and should be set as early as possible.
@@ -49,11 +50,15 @@ class TextVisualizer(Visualizer, TransformerMixin):
         ax : axes
             the axis to plot the figure on
 
+        fig : matplotlib Figure, default: None
+            The figure to plot the Visualizer on. If None is passed in the current
+            plot will be used (or generated if required).
+
         kwargs : dict
             Pass generic arguments to the drawing method
 
         """
-        super(TextVisualizer, self).__init__(ax=ax, **kwargs)
+        super(TextVisualizer, self).__init__(ax=ax, fig=fig, **kwargs)
 
     def fit(self, X, y=None, **fit_params):
         """
@@ -93,12 +98,12 @@ class TextVisualizer(Visualizer, TransformerMixin):
         """
         return X
 
-    def fit_transform_poof(self, X, y=None, **kwargs):
+    def fit_transform_show(self, X, y=None, **kwargs):
         """
         Fit to data, transform it, then visualize it.
 
         Fits the text visualizer to X and y with optional parameters by
-        passing in all of kwargs, then calls poof with the same kwargs.
+        passing in all of kwargs, then calls show with the same kwargs.
         This method must return the result of the transform method.
 
         Parameters
@@ -110,13 +115,13 @@ class TextVisualizer(Visualizer, TransformerMixin):
             An array or series of target or class values
 
         kwargs : dict
-            Pass generic arguments to the drawing method
+            Pass generic arguments to the show method
 
         Returns
         -------
         X : numpy array
             This method must return a numpy array with the same shape as X.
         """
-        Xp = self.fit_transform(X, y, **kwargs)
-        self.poof(**kwargs)
+        Xp = self.fit(X, y, **kwargs).transform(X)
+        self.show(**kwargs)
         return Xp

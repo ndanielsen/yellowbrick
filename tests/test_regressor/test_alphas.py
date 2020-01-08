@@ -1,13 +1,13 @@
 # tests.test_regressor.test_alphas
 # Tests for the alpha selection visualizations.
 #
-# Author:   Benjamin Bengfort <bbengfort@districtdatalabs.com>
+# Author:   Benjamin Bengfort
 # Created:  Tue Mar 07 12:13:04 2017 -0500
 #
-# Copyright (C) 2016 District Data Labs
+# Copyright (C) 2016 The scikit-yb developers
 # For license information, see LICENSE.txt
 #
-# ID: tests.test_regressor.test_alphas.py [] benjamin@bengfort.com $
+# ID: test_alphas.py [7d3f5e6] benjamin@bengfort.com $
 
 """
 Tests for the alpha selection visualizations.
@@ -17,49 +17,76 @@ Tests for the alpha selection visualizations.
 ## Imports
 ##########################################################################
 
-import unittest
+import sys
+import pytest
 import numpy as np
 
 from tests.base import VisualTestCase
+from numpy.testing.utils import assert_array_equal
+
 from yellowbrick.regressor.alphas import *
 from yellowbrick.exceptions import YellowbrickTypeError
 from yellowbrick.exceptions import YellowbrickValueError
 
 from sklearn.svm import SVR, SVC
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.datasets import make_regression
 from sklearn.linear_model import Ridge, RidgeCV
 from sklearn.linear_model import Lasso, LassoCV
 from sklearn.linear_model import LassoLars, LassoLarsCV
 from sklearn.linear_model import ElasticNet, ElasticNetCV
-from sklearn.datasets import make_regression
 
 
 ##########################################################################
 ## Alpha Selection Tests
 ##########################################################################
 
-class AlphaSelectionTests(VisualTestCase):
 
-    def test_regressor_cv(self):
+class TestAlphaSelection(VisualTestCase):
+    """
+    Test the AlphaSelection visualizer
+    """
+
+    @pytest.mark.xfail(sys.platform == "win32", reason="images not close on windows")
+    def test_similar_image(self):
+        """
+        Integration test with image simiarlity comparison
+        """
+
+        visualizer = AlphaSelection(LassoCV(random_state=0))
+
+        X, y = make_regression(random_state=0)
+        visualizer.fit(X, y)
+        visualizer.finalize()
+
+        self.assert_images_similar(visualizer)
+
+    @pytest.mark.parametrize("model", [SVR, Ridge, Lasso, LassoLars, ElasticNet])
+    def test_regressor_nocv(self, model):
         """
         Ensure only "CV" regressors are allowed
         """
+        with pytest.raises(YellowbrickTypeError):
+            AlphaSelection(model())
 
-        for model in (SVR, Ridge, Lasso, LassoLars, ElasticNet):
-            with self.assertRaises(YellowbrickTypeError):
-                alphas = AlphaSelection(model())
+    @pytest.mark.parametrize("model", [RidgeCV, LassoCV, LassoLarsCV, ElasticNetCV])
+    def test_regressor_cv(self, model):
+        """
+        Ensure "CV" regressors are allowed
+        """
+        try:
+            AlphaSelection(model())
+        except YellowbrickTypeError:
+            pytest.fail("could not instantiate RegressorCV on alpha selection")
 
-        for model in (RidgeCV, LassoCV, LassoLarsCV, ElasticNetCV):
-            try:
-                alphas = AlphaSelection(model())
-            except YellowbrickTypeError:
-                self.fail("could not instantiate RegressorCV on alpha selection")
-
-    def test_only_regressors(self):
+    @pytest.mark.parametrize("model", [SVC, KMeans, PCA])
+    def test_only_regressors(self, model):
         """
         Assert AlphaSelection only works with regressors
         """
-        with self.assertRaises(YellowbrickTypeError):
-            model = AlphaSelection(SVC())
+        with pytest.raises(YellowbrickTypeError):
+            AlphaSelection(model())
 
     def test_store_cv_values(self):
         """
@@ -67,28 +94,27 @@ class AlphaSelectionTests(VisualTestCase):
         """
 
         model = AlphaSelection(RidgeCV())
-        self.assertTrue(model.estimator.store_cv_values)
+        assert model.estimator.store_cv_values
 
         model = AlphaSelection(RidgeCV(store_cv_values=True))
-        self.assertTrue(model.estimator.store_cv_values)
+        assert model.estimator.store_cv_values
 
         model = AlphaSelection(RidgeCV(store_cv_values=False))
-        self.assertTrue(model.estimator.store_cv_values)
+        assert model.estimator.store_cv_values
 
-    def test_get_alphas_param(self):
+    @pytest.mark.parametrize("model", [RidgeCV, LassoCV, ElasticNetCV])
+    def test_get_alphas_param(self, model):
         """
-        Assert that we can get the alphas from ridge, lasso, and elasticnet
+        Assert that we can get the alphas from original CV models
         """
         alphas = np.logspace(-10, -2, 100)
 
-        # Test original CV models
-        for model in (RidgeCV, LassoCV, ElasticNetCV):
-            try:
-                model = AlphaSelection(model(alphas=alphas))
-                malphas = model._find_alphas_param()
-                self.assertTrue(np.array_equal(alphas, malphas))
-            except YellowbrickValueError:
-                self.fail("could not find alphas on {}".format(model.name))
+        try:
+            model = AlphaSelection(model(alphas=alphas))
+            malphas = model._find_alphas_param()
+            assert_array_equal(alphas, malphas)
+        except YellowbrickValueError:
+            pytest.fail("could not find alphas on {}".format(model.name))
 
     def test_get_alphas_param_lassolars(self):
         """
@@ -99,24 +125,32 @@ class AlphaSelectionTests(VisualTestCase):
         model.fit(X, y)
         try:
             malphas = model._find_alphas_param()
-            self.assertTrue(len(malphas) > 0)
+            assert len(malphas) > 0
         except YellowbrickValueError:
-            self.fail("could not find alphas on {}".format(model.name))
+            pytest.fail("could not find alphas on {}".format(model.name))
 
-    def test_get_errors_param(self):
+    @pytest.mark.parametrize("model", [RidgeCV, LassoCV, LassoLarsCV, ElasticNetCV])
+    def test_get_errors_param(self, model):
         """
         Test known models we can get the cv errors for alpha selection
         """
+        try:
+            model = AlphaSelection(model())
 
-        # Test original CV models
-        for model in (RidgeCV, LassoCV, LassoLarsCV, ElasticNetCV):
-            try:
-                model = AlphaSelection(model())
+            X, y = make_regression()
+            model.fit(X, y)
 
-                X, y = make_regression()
-                model.fit(X, y)
+            errors = model._find_errors_param()
+            assert len(errors) > 0
+        except YellowbrickValueError:
+            pytest.fail("could not find errors on {}".format(model.name))
 
-                errors = model._find_errors_param()
-                self.assertTrue(len(errors) > 0)
-            except YellowbrickValueError:
-                self.fail("could not find errors on {}".format(model.name))
+    def test_score(self):
+        """
+        Assert the score method returns an R2 value
+        """
+        visualizer = AlphaSelection(RidgeCV())
+
+        X, y = make_regression(random_state=352)
+        visualizer.fit(X, y)
+        assert visualizer.score(X, y) == pytest.approx(0.9999780266590336)
